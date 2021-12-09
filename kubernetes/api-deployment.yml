@@ -1,0 +1,58 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: net-mongo-service
+spec:
+  selector:
+    app: net-mongo-pod
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 80
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: net-mongo-api
+  namespace: kube-system
+spec:
+  rules:
+  - host: net-mongo.k8s-poc-flavio-rancher.skyinone.net
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: net-mongo-service
+          servicePort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  net-mongo-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: net-mongo-pod
+  template:
+    metadata:
+      labels:
+        app: net-mongo-pod
+    spec:
+      containers:
+      - image:  flaviowe/net_mongo:latest
+        name:  net-mongo-container
+        resources:
+          requests:
+            cpu: "256m"
+            memory: "128Mi"
+        env:
+        - name:  NET_MONGO
+          value:  mongodb://adminuser:password123@mongo
+        ports:
+        - containerPort: 80
+      restartPolicy: Always
